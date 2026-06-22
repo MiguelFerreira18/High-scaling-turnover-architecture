@@ -1,4 +1,4 @@
 package com.codecli.monolith.dto;
 
-public record SaveInvoice(String userId, Long[] productIds, boolean is_paid) {
+public record SaveInvoice(String userId, long[] productIds, boolean is_paid) {
 }

@@ -618,3 +618,6 @@ MigrationBackup/
 
 # End of https://www.toptal.com/developers/gitignore/api/eclipse,vs,vim
 # End of https://www.toptal.com/developers/gitignore/api/intellij+all,git,java,jmeter
+
+
+./output.xml

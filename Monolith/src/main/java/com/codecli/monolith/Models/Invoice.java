@@ -81,6 +81,9 @@ public class Invoice {
         }
     }
 
+    public Invoice() {
+    }
+
     public String getID() {
         return ID;
     }

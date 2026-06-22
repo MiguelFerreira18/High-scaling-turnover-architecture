@@ -11,9 +11,9 @@ public class SafTService {
         this.generator = generator;
     }
 
-    public boolean generateSafT() {
+    public boolean generateSafT(boolean shouldGenerateDocument) {
         try {
-            generator.createSafT();
+            generator.createSafT(shouldGenerateDocument);
         } catch (Exception e) {
             return false;
         }

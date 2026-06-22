@@ -23,4 +23,12 @@ public class CompanyService {
 
         return companyRepo.save(companyInfo);
     }
+
+    public boolean doesCompanyExist(String name) {
+        if (companyRepo.findCompanyByName(name) != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

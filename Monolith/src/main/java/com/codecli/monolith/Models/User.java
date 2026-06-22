@@ -6,6 +6,7 @@ import org.hibernate.annotations.UuidGenerator;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,10 +29,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private int nif;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "user_authority",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "authority_id"))
@@ -50,7 +51,7 @@ public class User implements UserDetails {
         this.password = password;
     }
 
-    public User(String email, String name, List<Authority> authorities, String password) {
+    public User(String email, String name, List<Authority> authorities, String password, int nif) {
         this.email = email;
         this.name = name;
         try {
@@ -62,7 +63,7 @@ public class User implements UserDetails {
         this.password = password;
     }
 
-    public User(String email, String name, String password) {
+    public User(String email, String name, String password, int nif) {
         this.email = email;
         this.name = name;
         try {
@@ -70,6 +71,14 @@ public class User implements UserDetails {
         } catch (Exception e) {
             this.nif = 999999990;
         }
+        this.authorities = new ArrayList<>();
+        this.password = password;
+    }
+
+    public User(String email, String name, String password) {
+        this.email = email;
+        this.name = name;
+        this.nif = 999999990;
         this.authorities = new ArrayList<>();
         this.password = password;
     }
@@ -142,6 +151,10 @@ public class User implements UserDetails {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void setPassword(String password, PasswordEncoder encoder) {
+        this.password = encoder.encode(password);
     }
 
     public void setNif(int nif) {

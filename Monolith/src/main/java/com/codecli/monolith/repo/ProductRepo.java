@@ -9,8 +9,14 @@ import java.util.List;
 
 
 @Repository
-public interface ProductRepo extends CrudRepository<Product,Long> {
+public interface ProductRepo extends CrudRepository<Product, Long> {
 
     @Query("select p.iva from Product p")
     List<Float> findAllIvas();
+
+    @Query("select p from Product p where p.name = ?1")
+    public Product findProductByName(String name);
+
+    @Query("select count(p) from Product p")
+    public Long countProducts();
 }

@@ -7,20 +7,19 @@ import com.codecli.monolith.Models.User;
 import com.codecli.monolith.repo.CompanyRepo;
 import com.codecli.monolith.repo.InvoiceRepo;
 import com.codecli.monolith.repo.ProductRepo;
-import com.codecli.monolith.repo.UserRepo;
 import jakarta.xml.bind.DatatypeConverter;
+import org.hibernate.annotations.CurrentTimestamp;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.xml.crypto.dsig.DigestMethod;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.util.LinkedList;
@@ -58,7 +57,9 @@ public class SafTGenerator {
             -
      */
 
-    public void createSafT() throws Exception {
+    public void createSafT(boolean shouldGenerateDocument) throws Exception {
+        long start = System.nanoTime();
+
         Iterable<Product> products = productRepo.findAll();
         List<Float> ivas = productRepo.findAllIvas();
         List<Invoice> invoices = StreamSupport.stream(invoiceRepo.findAll().spliterator(), false).toList();
@@ -70,8 +71,7 @@ public class SafTGenerator {
         Element root = document.createElement("AuditFiles");
         root.setAttribute("xmlns", "urn:OECD:StandardAuditFile-Tax:PT_1.04_01");
         root.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-        root.setAttribute("xsi:schemaLocation", "urn:OECD:StandardAuditFile-Tax:PT_1.04_01\n" +
-                "                               SAFTPT1.04_01.xsd");
+        root.setAttribute("xsi:schemaLocation", "urn:OECD:StandardAuditFile-Tax:PT_1.04_01SAFTPT1.04_01.xsd");
         document.appendChild(root);
         root.appendChild(createHeader(document));
         root.appendChild(createMasterFiles(document, products, ivas));
@@ -81,11 +81,18 @@ public class SafTGenerator {
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
         DOMSource source = new DOMSource(document);
-
-        StreamResult result = new StreamResult("./output.xml");
+        /*
+         This is here simply to run the performance tests, no need to actually save any file
+         if we want to only test the performance to which the xml is generated
+         */
+        StreamResult result = new StreamResult(OutputStream.nullOutputStream());
+        if (shouldGenerateDocument) {
+            result = new StreamResult("output.xml");
+        }
         transformer.transform(source, result);
+        long end = System.nanoTime();
 
-        System.out.println("XML file created successfully");
+        System.out.println("XML file created successfully it took: " + (end - start) / 1_000_000 + " ms");
     }
 
     private Element createHeader(Document document) {
@@ -118,7 +125,6 @@ public class SafTGenerator {
         queue.add(createTextElements(document, "ProductCompanyTax", productCompanyTax));
         queue.add(createTextElements(document, "SoftwareCertificateNumber", "9999"));
         queue.forEach(header::appendChild);
-
         //INFO: There are other headers like ProductId,ProductVersion,Telephone,Fax etc. These are extra so i won't be adding them.
 
         return header;
@@ -128,7 +134,7 @@ public class SafTGenerator {
         Element element = document.createElement("MasterFiles");
         createCustomer(document).forEach(element::appendChild);
         createProducts(document, products).forEach(element::appendChild);
-        element.appendChild(createTaxTable(document, ivas));
+        element.appendChild(createTaxTable(document, ivas.stream().distinct().toList()));
 
         return element;
     }
@@ -148,6 +154,7 @@ public class SafTGenerator {
         queue.add(createTextElements(document, "CompanyName", user.getUsername()));
         queue.add(createTextElements(document, "CustomerTaxID", String.valueOf(user.getNif())));
         queue.add(createTextElements(document, "Email", user.getEmail()));
+        queue.forEach(element::appendChild);
 
         return element;
     }
@@ -228,38 +235,30 @@ public class SafTGenerator {
         queue.add(createTextElements(document, "JournalID", "VD"));
         queue.add(createTextElements(document, "Description", "Sales journal"));
         queue.add(createTextElements(document, "JournalID", "VD"));
-        queue.add(createTransaction(document, invoices));
+        queue.addAll(createTransactions(document, invoices));
         queue.forEach(element::appendChild);
 
         return element;
     }
 
-    private Element createTransaction(Document document, List<Invoice> invoices) {
+    private List<Element> createTransactions(Document document, List<Invoice> invoices) {
+        return invoices.stream().map(i -> createTransaction(document, i))
+                .toList();
+    }
+
+    private Element createTransaction(Document document, Invoice invoice) {
         Element element = document.createElement("Transaction");
-        createTransactionLines(document, invoices).forEach(element::appendChild);
+        createTransactionLines(document, invoice).forEach(element::appendChild);
         return element;
     }
 
-    private List<Element> createTransactionLines(Document document, List<Invoice> invoices) {
-        float totalWithIva = invoices.stream()
-                .map(Invoice::getTotalAfterTax)
-                .reduce(Float::sum)
-                .get();
-        float totalWithoutIva = invoices.stream()
-                .map(Invoice::getTotal)
-                .reduce(Float::sum)
-                .get();
-        float totalIvaLiquidated = invoices.stream()
-                .map(Invoice::getTotalLiquidatedIva)
-                .reduce(Float::sum)
-                .get();
-        List<Element> elements = List.of(
-                createTransactionLine(document, "1", "21111", "Invoice client - total value with Iva", String.valueOf(totalWithIva), true),
-                createTransactionLine(document, "2", "71111", "Product Sales", String.valueOf(totalWithoutIva), false),
-                createTransactionLine(document, "3", "24321", "Liquidated Iva", String.valueOf(totalIvaLiquidated), false) // For realistic purposes you should have the different tiers
-        );
+    private List<Element> createTransactionLines(Document document, Invoice invoice) {
 
-        return elements;
+        return List.of(
+                createTransactionLine(document, "1", "21111", "Invoice client - total value with Iva", String.valueOf(invoice.getTotalAfterTax()), true),
+                createTransactionLine(document, "2", "71111", "Product Sales", String.valueOf(invoice.getTotal()), false),
+                createTransactionLine(document, "3", "24321", "Liquidated Iva", String.valueOf(invoice.getTotalLiquidatedIva()), false) // For realistic purposes you should have the different tiers
+        );
     }
 
     private Element createTransactionLine(Document document, String recordID, String accountID, String description, String amount, boolean isDebit) {
@@ -293,7 +292,8 @@ public class SafTGenerator {
 
     private Element createSalesInvoices(Document document, List<Invoice> invoices) {
         Element element = document.createElement("SalesInvoices");
-        createInvoices(document, invoices).forEach(element::appendChild);
+        createInvoices(document, invoices)
+                .forEach(element::appendChild);
         return element;
     }
 

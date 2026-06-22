@@ -29,4 +29,12 @@ public class ProductService {
     public List<Product> getAllProducts() {
         return StreamSupport.stream(this.productRepo.findAll().spliterator(), false).toList();
     }
+
+    public Boolean doesProductExist(String product) {
+        if (productRepo.findProductByName(product) != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
