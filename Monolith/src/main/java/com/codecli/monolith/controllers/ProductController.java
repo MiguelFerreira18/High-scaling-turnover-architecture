@@ -6,9 +6,6 @@ import com.codecli.monolith.service.ProductService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.StreamSupport;
-
 @RestController
 @RequestMapping("/products")
 public class ProductController {

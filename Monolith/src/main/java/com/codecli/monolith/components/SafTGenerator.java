@@ -8,7 +8,6 @@ import com.codecli.monolith.repo.CompanyRepo;
 import com.codecli.monolith.repo.InvoiceRepo;
 import com.codecli.monolith.repo.ProductRepo;
 import jakarta.xml.bind.DatatypeConverter;
-import org.hibernate.annotations.CurrentTimestamp;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -40,7 +39,7 @@ public class SafTGenerator {
         this.productRepo = productRepo;
     }
     /*
-    //More or les the structure of saf-t in Portugal
+    //More or less the structure of saf-t in Portugal
     - AuditFiles
         -Header
         -MasterFiles

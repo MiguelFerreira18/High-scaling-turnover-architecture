@@ -1,7 +1,6 @@
 package com.codecli.monolith.Models;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.AnyDiscriminatorImplicitValues;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 

@@ -1,9 +1,7 @@
 package com.codecli.monolith.init;
 
-import com.codecli.monolith.Models.Product;
 import com.codecli.monolith.Models.User;
 import com.codecli.monolith.dto.SaveInvoice;
-import com.codecli.monolith.repo.CompanyRepo;
 import com.codecli.monolith.repo.ProductRepo;
 import com.codecli.monolith.repo.UserRepo;
 import com.codecli.monolith.service.InvoiceService;
@@ -11,7 +9,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;

@@ -1,7 +1,6 @@
 package com.codecli.monolith.controllers;
 
 import com.codecli.monolith.Models.Invoice;
-import com.codecli.monolith.Models.Product;
 import com.codecli.monolith.dto.SaveInvoice;
 import com.codecli.monolith.service.InvoiceService;
 import org.springframework.http.ResponseEntity;

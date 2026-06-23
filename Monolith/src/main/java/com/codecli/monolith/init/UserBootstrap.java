@@ -1,8 +1,6 @@
 package com.codecli.monolith.init;
 
-import com.codecli.monolith.Models.User;
 import com.codecli.monolith.dto.SaveUser;
-import com.codecli.monolith.repo.UserRepo;
 import com.codecli.monolith.service.UserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
